@@ -7,12 +7,12 @@ require "yaml"
 
 class GithubScore
   attr_accessor :all_users, :scores
-  attr_reader :city
+  attr_reader :city, :cities
   def initialize(city)
     @city = city
     @all_users = []
     @scores = []
-
+    @cities = city.split(" ")
     find_users_for_city
     calculate_score_for_users
     finish
@@ -24,13 +24,15 @@ class GithubScore
   private
   def find_users_for_city
     # pagination
-    100.times do |i|
-      users = g.search.users(keyword: city, start_page: i + 1)["users"] rescue []
-      @all_users += users
-      break if users.count < 100
+    cities.each do |c|
+      100.times do |i|
+        users = g.search.users(keyword: c, start_page: i + 1)["users"] rescue []
+        @all_users += users
+        break if users.count < 100
+      end
     end
     $stderr.puts "#{all_users.count} potential users found with '#{city}' somewhere"
-    @all_users = all_users.select{|i| i[:location][/#{city}/i] }
+    @all_users = all_users.select{|i| i[:location][/#{city.gsub(" ","|")}/i] }
     puts "#{all_users.count} have locations = '#{city}'"
   end
 
