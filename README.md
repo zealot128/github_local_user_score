@@ -26,12 +26,13 @@ I just used the data, given out by the github api, to calculate the score simply
 ```ruby
  def score_for_user(details)
     details.public_gists +
-      details.public_repos * 2 +
-      details.followers * 3 +
-      details.following
+      details.public_repos +
+      details.followers * 2 +
+      details.following +
+      watchers_and_forks
  end
 ```
 
-Number of Gists + Number of Repos * 2 + Number of Followers * 3  + Number of Following
+Number of Gists + Number of Repos * 2 + Number of Followers * 2  + Number of Following + Numbers of watchers and forks of all own repositories
 
 

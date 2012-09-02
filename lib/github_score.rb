@@ -25,12 +25,15 @@ class GithubScore
   def find_users_for_city
     # pagination
     cities.each do |c|
-      100.times do |i|
-        users = g.search.users(keyword: c, start_page: i + 1)["users"] rescue []
+      c = CGI.escape c
+      2.times do |i|
+        #users = g.search.users(keyword: c, start_page: i + 1)["users"] rescue []
+        users = g.search.users(keyword: "location:#{c}", start_page: i + 1)["users"] rescue []
         @all_users += users
-        break if users.count < 100
+        break if users.count < 100 # break, if it is the last page
       end
     end
+    all_users.uniq!
     $stderr.puts "#{all_users.count} potential users found with '#{city}' somewhere"
     @all_users = all_users.select{|i| i[:location][/#{city.gsub(" ","|")}/i] }
     puts "#{all_users.count} have locations = '#{city}'"
@@ -64,15 +67,20 @@ class GithubScore
     $stderr.puts "Saving results to #{filename}"
     File.open(filename, "w+") { |f| f.write scores.to_yaml }
 
-
     puts "TOP 20 in #{city}"
     Formatador.display_table(scores[0...20], [:position, :login, :score, :name, :location] )
   end
 
   def score_for_user(details)
+    watchers_and_forks = g.repos.list(user: "zealot128").
+      reject{|repos| repos["fork"]  }.
+      map{|i|i["watchers_count"] + 2 * i["forks_count"]}.
+      reduce(:+)
+
     details.public_gists +
-      details.public_repos * 2 +
-      details.followers * 3 +
-      details.following
+      details.public_repos +
+      details.followers * 2 +
+      details.following +
+      watchers_and_forks
   end
 end
